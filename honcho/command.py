@@ -27,6 +27,31 @@ export_choices = dict((_export.name, _export)
 class CommandError(Exception):
     pass
 
+_parent_parser = argparse.ArgumentParser(
+    'honcho',
+    description='Manage Procfile-based applications',
+    add_help=False)
+_parent_parser.add_argument(
+    '-e', '--env',
+    help='environment file[,file]', default='.env')
+_parent_parser.add_argument(
+    '-d', '--app-root',
+    help='procfile directory', default='.')
+_parent_parser.add_argument(
+    '-f', '--procfile',
+    help='procfile path', default='Procfile')
+_parent_parser.add_argument(
+    '-v', '--version',
+    action='version', version='%(prog)s ' + __version__)
+_parent_parser.add_argument(
+    '--no-catch-exceptions',
+    action='store_false', dest='catch_exceptions',
+    help='Do not catch exceptions. Useful for debugging.')
+
+_parser_defaults = {
+    'parents': [_parent_parser],
+    'formatter_class': argparse.ArgumentDefaultsHelpFormatter,
+}
 
 def _add_common_args(parser, with_defaults=False):
     suppress = None if with_defaults else argparse.SUPPRESS
@@ -261,12 +286,19 @@ def main(argv=None):
     else:
         args = parser.parse_args()
 
+<<<<<<< HEAD
     try:
         _check_output_encoding()
+=======
+    if args.catch_exceptions:
+        try:
+            COMMANDS[args.command](args)
+        except CommandError as e:
+            log.error(str(e))
+            sys.exit(1)
+    else:
+>>>>>>> Add --no-catch-exceptions option for debugging
         COMMANDS[args.command](args)
-    except CommandError as e:
-        log.error(str(e))
-        sys.exit(1)
 
 
 def _procfile_path(app_root, procfile):
