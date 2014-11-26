@@ -2,8 +2,10 @@ import argparse
 import codecs
 import logging
 import os
+import pdb
 import sys
 import signal
+import traceback
 from collections import defaultdict
 from pkg_resources import iter_entry_points
 
@@ -27,6 +29,31 @@ export_choices = dict((_export.name, _export)
 class CommandError(Exception):
     pass
 
+_parent_parser = argparse.ArgumentParser(
+    'honcho',
+    description='Manage Procfile-based applications',
+    add_help=False)
+_parent_parser.add_argument(
+    '-e', '--env',
+    help='environment file[,file]', default='.env')
+_parent_parser.add_argument(
+    '-d', '--app-root',
+    help='procfile directory', default='.')
+_parent_parser.add_argument(
+    '-f', '--procfile',
+    help='procfile path', default='Procfile')
+_parent_parser.add_argument(
+    '-v', '--version',
+    action='version', version='%(prog)s ' + __version__)
+_parent_parser.add_argument(
+    '--pdb',
+    action='store_true',
+    help='Activate pdb on exception; for debugging')
+
+_parser_defaults = {
+    'parents': [_parent_parser],
+    'formatter_class': argparse.ArgumentDefaultsHelpFormatter,
+}
 
 def _add_common_args(parser, with_defaults=False):
     suppress = None if with_defaults else argparse.SUPPRESS
@@ -265,8 +292,13 @@ def main(argv=None):
         _check_output_encoding()
         COMMANDS[args.command](args)
     except CommandError as e:
-        log.error(str(e))
-        sys.exit(1)
+        if args.pdb:
+            type, value, tb = sys.exc_info()
+            traceback.print_exc()
+            pdb.post_mortem(tb)
+        else:
+            log.error(str(e))
+            sys.exit(1)
 
 
 def _procfile_path(app_root, procfile):
