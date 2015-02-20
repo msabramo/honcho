@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+from os import path
 import re
 import sys
 
@@ -19,20 +20,26 @@ except ImportError:
 
 
 class BaseExport(object):
-    def __init__(self, template_env=None):
+    def __init__(self, template_env=None, context=None):
         if template_env is None:
             template_env = _default_template_env()
         self._template_env = template_env
+        self.context = context or {}
 
-    def get_template(self, path):
+    def get_template(self, default_path):
         """
         Retrieve the template at the specified path. Returns an instance of
         :py:class:`Jinja2.Template` by default, but may be overridden by
         subclasses.
         """
-        return self._template_env.get_template(path)
+        try:
+            template = self.context.get('template') or default_path
+            return self._template_env.get_template(template)
+        except jinja2.exceptions.TemplateNotFound:
+            template = path.join(self.context.get('template'), default_path)
+            return self._template_env.get_template(template)
 
-    def render(self, processes, context):
+    def render(self, processes):
         raise NotImplementedError("You must implement a render method.")
 
 
@@ -48,7 +55,7 @@ def _default_template_env():
     env = jinja2.Environment(
         loader=jinja2.ChoiceLoader([
             jinja2.PackageLoader(__name__, 'templates'),
-            jinja2.FileSystemLoader('/'),
+            jinja2.FileSystemLoader(['/', '.']),
         ])
     )
     env.filters['shellquote'] = shellquote

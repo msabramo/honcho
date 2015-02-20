@@ -5,7 +5,11 @@ from honcho.export.base import dashrepl
 
 
 class Export(BaseExport):
-    def render(self, processes, context):
+    # def get_template(self, path):
+
+    def render(self, processes):
+        context = self.context
+
         master_tpl = self.get_template('upstart/master.conf')
         process_master_tpl = self.get_template('upstart/process_master.conf')
         process_tpl = self.get_template('upstart/process.conf')

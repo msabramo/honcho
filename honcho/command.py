@@ -88,9 +88,6 @@ def command_export(args):
                                          env=env,
                                          port=args.port)
 
-    export_ctor = export_choices[args.format].load()
-    export = export_ctor()
-
     context = {
         'app': args.app,
         'app_root': os.path.abspath(args.app_root),
@@ -100,9 +97,12 @@ def command_export(args):
         'template': args.template,
     }
 
+    export_ctor = export_choices[args.format].load()
+    export = export_ctor(context=context)
+
     _mkdir(args.location)
 
-    for filename, contents in export.render(processes, context):
+    for filename, contents in export.render(processes):
         path = os.path.join(args.location, filename)
         log.info("Writing '%s'", path)
         _write_file(path, contents)
